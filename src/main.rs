@@ -11,9 +11,21 @@ use crate::hitable::{Hitable, HitableList};
 use crate::sphere::Sphere;
 use crate::camera::Camera;
 
+fn random_in_unit_sphere() -> Vector3<f32> {
+    let mut rng = rand::thread_rng();
+    let unit = Vector3::new(1.0, 1.0, 1.0);
+    loop {
+        let p = 2.0 * Vector3::new(rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>()) - unit;
+        if p.magnitude_squared() < 1.0 {
+            return p
+        }
+    }
+}
+
 fn color(ray: &Ray, world: &HitableList) -> Vector3<f32> {
     if let Some(hit) = world.hit(ray, 0.0, f32::MAX) {
-        0.5 * hit.normal.add_scalar(1.0)
+        let target = hit.p + hit.normal + random_in_unit_sphere();
+        0.5 * color(&Ray::new(hit.p, target - hit.p), world)
     } else {
         let unit_direction = ray.direction().normalize();
         let t = 0.5 * (unit_direction[1] + 1.0);
