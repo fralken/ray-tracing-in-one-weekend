@@ -23,7 +23,7 @@ fn random_in_unit_sphere() -> Vector3<f32> {
 }
 
 fn color(ray: &Ray, world: &HitableList) -> Vector3<f32> {
-    if let Some(hit) = world.hit(ray, 0.0, f32::MAX) {
+    if let Some(hit) = world.hit(ray, 0.001, f32::MAX) {
         let target = hit.p + hit.normal + random_in_unit_sphere();
         0.5 * color(&Ray::new(hit.p, target - hit.p), world)
     } else {
@@ -54,6 +54,7 @@ fn main() {
                 col += color(&ray, &world);
             }
             col /= ns as f32;
+            for c in col.iter_mut() { *c = c.sqrt(); }
             let ir = (255.99 * col[0]) as i32;
             let ig = (255.99 * col[1]) as i32;
             let ib = (255.99 * col[2]) as i32;
