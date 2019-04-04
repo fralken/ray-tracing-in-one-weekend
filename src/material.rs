@@ -30,6 +30,11 @@ fn refract(v: &Vector3<f32>, n: &Vector3<f32>, ni_over_nt: f32) -> Option<Vector
     }
 }
 
+fn schlick(cosine: f32, ref_idx: f32) -> f32 {
+    let r0 = ((1.0 - ref_idx) / (1.0 + ref_idx)).powi(2);
+    r0 + (1.0 -r0) * (1.0 - cosine).powi(5)
+}
+
 pub trait Material {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vector3<f32>)>;
 }
@@ -85,18 +90,22 @@ impl Dielectric {
 impl Material for Dielectric {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vector3<f32>)> {
         let attenuation = Vector3::new(1.0, 1.0, 1.0);
-        let (outward_normal, ni_over_nt) = if ray.direction().dot(&hit.normal) > 0.0 {
-            (-hit.normal, self.ref_idx)
+        let (outward_normal, ni_over_nt, cosine) = if ray.direction().dot(&hit.normal) > 0.0 {
+            let cosine = self.ref_idx * ray.direction().dot(&hit.normal) / ray.direction().magnitude();
+            (-hit.normal, self.ref_idx, cosine)
         } else {
-            (hit.normal, 1.0 / self.ref_idx)
+            let cosine = -ray.direction().dot(&hit.normal) / ray.direction().magnitude();
+            (hit.normal, 1.0 / self.ref_idx, cosine)
         };
         if let Some(refracted) = refract(&ray.direction(), &outward_normal, ni_over_nt) {
-            let scattered = Ray::new(hit.p, refracted);
-            Some((scattered, attenuation))
-        } else {
-            let reflected = reflect(&ray.direction(), &hit.normal);
-            let scattered = Ray::new(hit.p, reflected);
-            Some((scattered, attenuation))
+            let reflect_prob = schlick(cosine, self.ref_idx);
+            if rand::thread_rng().gen::<f32>() >= reflect_prob {
+                let scattered = Ray::new(hit.p, refracted);
+                return Some((scattered, attenuation))
+            }
         }
+        let reflected = reflect(&ray.direction(), &hit.normal);
+        let scattered = Ray::new(hit.p, reflected);
+        Some((scattered, attenuation))
     }
 }
