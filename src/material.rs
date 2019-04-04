@@ -18,6 +18,18 @@ fn reflect(v: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
     v - 2.0 * v.dot(&n) * n
 }
 
+fn refract(v: &Vector3<f32>, n: &Vector3<f32>, ni_over_nt: f32) -> Option<Vector3<f32>> {
+    let uv = v.normalize();
+    let dt = uv.dot(&n);
+    let discriminant = 1.0 - ni_over_nt.powi(2) * (1.0 - dt.powi(2));
+    if discriminant > 0.0 {
+        let refracted = ni_over_nt * (uv - n * dt) - n * discriminant.sqrt();
+        Some(refracted)
+    } else {
+        None
+    }
+}
+
 pub trait Material {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vector3<f32>)>;
 }
@@ -51,13 +63,40 @@ impl Metal {
 
 impl Material for Metal {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vector3<f32>)> {
-        let reflected = reflect(&ray.direction().normalize(), &hit.normal);
-        let reflected_fuzzed = reflected + self.fuzz * random_in_unit_sphere();
-        if reflected_fuzzed.dot(&hit.normal) > 0.0 {
-            let scattered = Ray::new(hit.p, reflected_fuzzed);
+        let mut reflected = reflect(&ray.direction().normalize(), &hit.normal);
+        if self.fuzz > 0.0 { reflected += self.fuzz * random_in_unit_sphere() };
+        if reflected.dot(&hit.normal) > 0.0 {
+            let scattered = Ray::new(hit.p, reflected);
             Some((scattered, self.albedo))
         } else {
             None
+        }
+    }
+}
+
+pub struct Dielectric {
+    ref_idx: f32
+}
+
+impl Dielectric {
+    pub fn new(ref_idx: f32) -> Self { Dielectric { ref_idx } }
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> Option<(Ray, Vector3<f32>)> {
+        let attenuation = Vector3::new(1.0, 1.0, 1.0);
+        let (outward_normal, ni_over_nt) = if ray.direction().dot(&hit.normal) > 0.0 {
+            (-hit.normal, self.ref_idx)
+        } else {
+            (hit.normal, 1.0 / self.ref_idx)
+        };
+        if let Some(refracted) = refract(&ray.direction(), &outward_normal, ni_over_nt) {
+            let scattered = Ray::new(hit.p, refracted);
+            Some((scattered, attenuation))
+        } else {
+            let reflected = reflect(&ray.direction(), &hit.normal);
+            let scattered = Ray::new(hit.p, reflected);
+            Some((scattered, attenuation))
         }
     }
 }
