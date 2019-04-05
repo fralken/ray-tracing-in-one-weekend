@@ -13,12 +13,15 @@ pub trait Hitable {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
+#[derive(Default)]
 pub struct HitableList {
     list: Vec<Box<Hitable>>
 }
 
 impl HitableList {
-    pub fn new(list: Vec<Box<Hitable>>) -> Self { HitableList { list } }
+    pub fn push(&mut self, hitable: impl Hitable + 'static) {
+        self.list.push(Box::new(hitable))
+    }
 }
 
 impl Hitable for HitableList {
