@@ -41,11 +41,11 @@ fn main() {
         Box::new(Sphere::new(Vector3::new(-1.0, 0.0, -1.0), 0.5, Dielectric::new(1.5))),
         Box::new(Sphere::new(Vector3::new(-1.0, 0.0, -1.0), -0.45, Dielectric::new(1.5)))
     ]);
-    let cam = Camera::new(
-        Vector3::new(-2.0, 2.0, 1.0),
-        Vector3::new(0.0, 0.0, -1.0),
-        Vector3::new(0.0, 1.0, 0.0),
-        20.0, nx as f32 / ny as f32);
+    let look_from = Vector3::new(3.0, 3.0, 2.0);
+    let look_at = Vector3::new(0.0, 0.0, -1.0);
+    let focus_dist = (look_from - look_at).magnitude();
+    let aperture = 2.0;
+    let cam = Camera::new(look_from, look_at, Vector3::new(0.0, 1.0, 0.0), 20.0, nx as f32 / ny as f32, aperture, focus_dist);
     for j in (0..ny).rev() {
         for i in 0..nx {
             let mut col = Vector3::new(0.0, 0.0, 0.0);
