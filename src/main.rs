@@ -45,7 +45,7 @@ fn main() {
         Vector3::new(-2.0, 2.0, 1.0),
         Vector3::new(0.0, 0.0, -1.0),
         Vector3::new(0.0, 1.0, 0.0),
-        90.0, nx as f32 / ny as f32);
+        20.0, nx as f32 / ny as f32);
     for j in (0..ny).rev() {
         for i in 0..nx {
             let mut col = Vector3::new(0.0, 0.0, 0.0);
