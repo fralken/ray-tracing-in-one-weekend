@@ -34,12 +34,18 @@ fn main() {
     let ny = 100;
     let ns = 100;
     println!("P3\n{} {}\n255", nx, ny);
-    let r = f32::cos(f32::consts::FRAC_PI_4);
     let world = HitableList::new(vec![
-        Box::new(Sphere::new(Vector3::new(-r, 0.0, -1.0), r, Lambertian::new(Vector3::new(0.0, 0.0, 1.0)))),
-        Box::new(Sphere::new(Vector3::new(r, 0.0, -1.0), r, Lambertian::new(Vector3::new(1.0, 0.0, 0.0))))
+        Box::new(Sphere::new(Vector3::new(0.0, 0.0, -1.0), 0.5, Lambertian::new(Vector3::new(0.1, 0.2, 0.5)))),
+        Box::new(Sphere::new(Vector3::new(0.0, -100.5, -1.0), 100.0, Lambertian::new(Vector3::new(0.8, 0.8, 0.0)))),
+        Box::new(Sphere::new(Vector3::new(1.0, 0.0, -1.0), 0.5, Metal::new(Vector3::new(0.8, 0.6, 0.2), 0.2))),
+        Box::new(Sphere::new(Vector3::new(-1.0, 0.0, -1.0), 0.5, Dielectric::new(1.5))),
+        Box::new(Sphere::new(Vector3::new(-1.0, 0.0, -1.0), -0.45, Dielectric::new(1.5)))
     ]);
-    let cam = Camera::new(90.0, nx as f32 / ny as f32);
+    let cam = Camera::new(
+        Vector3::new(-2.0, 2.0, 1.0),
+        Vector3::new(0.0, 0.0, -1.0),
+        Vector3::new(0.0, 1.0, 0.0),
+        90.0, nx as f32 / ny as f32);
     for j in (0..ny).rev() {
         for i in 0..nx {
             let mut col = Vector3::new(0.0, 0.0, 0.0);
