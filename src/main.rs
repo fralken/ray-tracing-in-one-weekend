@@ -7,6 +7,7 @@ mod camera;
 use std::f32;
 use nalgebra::Vector3;
 use rand::Rng;
+use rayon::prelude::*;
 use crate::ray::Ray;
 use crate::material::{Lambertian, Metal, Dielectric};
 use crate::hitable::{Hitable, HitableList};
@@ -59,10 +60,9 @@ fn color(ray: &Ray, world: &HitableList, depth: i32) -> Vector3<f32> {
 }
 
 fn main() {
-    let mut rng = rand::thread_rng();
     let nx = 1200;
     let ny = 800;
-    let ns = 10;
+    let ns = 100;
     println!("P3\n{} {}\n255", nx, ny);
     let world = random_scene();
     let look_from = Vector3::new(13.0, 2.0, 3.0);
@@ -70,21 +70,23 @@ fn main() {
     let focus_dist = 10.0;
     let aperture = 0.1;
     let cam = Camera::new(look_from, look_at, Vector3::new(0.0, 1.0, 0.0), 20.0, nx as f32 / ny as f32, aperture, focus_dist);
-    for j in (0..ny).rev() {
-        for i in 0..nx {
-            let mut col = Vector3::new(0.0, 0.0, 0.0);
-            for _ in 0..ns {
-                let u = (i as f32 + rng.gen::<f32>()) / nx as f32;
-                let v = (j as f32 + rng.gen::<f32>()) / ny as f32;
-                let ray = cam.get_ray(u, v);
-                col += color(&ray, &world, 0);
-            }
-            col /= ns as f32;
-            for c in col.iter_mut() { *c = c.sqrt(); }
-            let ir = (255.99 * col[0]) as i32;
-            let ig = (255.99 * col[1]) as i32;
-            let ib = (255.99 * col[2]) as i32;
-            println!("{} {} {}", ir, ig, ib);
-        }
+    let image =
+        (0..ny).into_par_iter().rev()
+            .flat_map(|y|
+                (0..nx).flat_map(|x| {
+                    let col: Vector3<f32> = (0..ns).map(|_| {
+                        let mut rng = rand::thread_rng();
+                        let u = (x as f32 + rng.gen::<f32>()) / nx as f32;
+                        let v = (y as f32 + rng.gen::<f32>()) / ny as f32;
+                        let ray = cam.get_ray(u, v);
+                        color(&ray, &world, 0)
+                    }).sum();
+                    col.iter().map(|c|
+                        (255.99 * (c / ns as f32).sqrt().max(0.0).min(1.0)) as u8
+                    ).collect::<Vec<u8>>()
+                }).collect::<Vec<u8>>()
+            ).collect::<Vec<u8>>();
+    for col in image.chunks(3) {
+        println!("{} {} {}", col[0], col[1], col[2]);
     }
 }

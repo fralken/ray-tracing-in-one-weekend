@@ -9,7 +9,7 @@ pub struct HitRecord<'a> {
     pub material: &'a Material
 }
 
-pub trait Hitable {
+pub trait Hitable: Sync {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 

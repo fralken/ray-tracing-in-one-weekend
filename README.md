@@ -23,4 +23,9 @@ Hence dependencies are:
 
 You can go on with my Rust implementation for the second book, ["Ray tracing: the next week, in Rust"](https://github.com/fralken/ray-tracing-the-next-week).
 
+### Improvements
+
+- I easily made the main loop parallel with the [`rayon`](https://crates.io/crates/rayon) crate.
+Just make sure that Traits are marked `Sync` and then it's just a matter of using an `into_par_iter()` iterator.
+
 ![Ray Tracing](image.jpg)
